@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>常山师生桥 - 免费补课信息交流平台</title>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #1a5276;
+            --primary-light: #2980b9;
+            --accent: #e67e22;
+            --bg: #f5f6f8;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --text-light: #5a6c7d;
+            --border: #e0e4e8;
+            --shadow: 0 2px 12px rgba(0,0,0,0.06);
+            --radius: 12px;
+            --tag-blue: #e8f4fd;
+            --tag-blue-text: #1a6daa;
+            --tag-green: #e8f8ef;
+            --tag-green-text: #1a7a4c;
+            --tag-orange: #fef5ec;
+            --tag-orange-text: #b86e1c;
+            --danger: #c0392b;
+            --admin-color: #8e44ad;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a3c5e 0%, #1a5276 40%, #1a6d8a 100%);
+            position: sticky; top:0; z-index:100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+        .header-inner {
+            max-width: 1200px; margin:0 auto; padding:14px 20px;
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .logo {
+            display:flex; align-items:center; gap:10px; text-decoration:none;
+            color:#fff; font-weight:700; font-size:1.35rem;
+        }
+        .logo-icon {
+            width:40px; height:40px; background:rgba(255,255,255,0.18);
+            border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.4rem;
+        }
+        .btn {
+            display:inline-flex; align-items:center; gap:6px;
+            padding:10px 18px; border-radius:25px; border:none;
+            font-size:0.9rem; cursor:pointer; font-weight:600;
+            transition:0.25s; white-space:nowrap; font-family:inherit;
+        }
+        .btn-primary {
+            background:var(--accent); color:#fff;
+            box-shadow:0 3px 12px rgba(230,126,34,0.35);
+        }
+        .btn-outline {
+            background:rgba(255,255,255,0.12); color:#fff;
+            border:1.5px solid rgba(255,255,255,0.35);
+        }
+        .btn-sm { padding:6px 14px; font-size:0.8rem; }
+        .btn-reset {
+            padding:12px 18px; border-radius:25px; background:#fff;
+            color:var(--text-light); border:2px solid var(--border);
+            cursor:pointer; font-size:0.85rem;
+        }
+        .main-container { max-width:1200px; margin:0 auto; padding:24px 20px 60px; }
+        .hero-section {
+            background:linear-gradient(135deg, #eef5fa 0%, #f8fafc 30%, #fdf6f0 100%);
+            border-radius:var(--radius); padding:32px 28px; margin-bottom:28px;
+            box-shadow:var(--shadow); border:1px solid #e8edf2;
+        }
+        .hero-title { font-size:1.6rem; font-weight:700; color:#1a3c5e; }
+        .hero-subtitle { font-size:0.9rem; color:var(--text-light); margin-bottom:20px; }
+        .hero-badge {
+            display:inline-block; background:#eafaf1; color:#1a7a4c;
+            font-size:0.78rem; padding:4px 12px; border-radius:20px; font-weight:600; margin-bottom:16px;
+        }
+        .search-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+        .search-input-wrap { flex:1; min-width:200px; position:relative; }
+        .search-input-wrap input {
+            width:100%; padding:12px 16px 12px 42px; border-radius:25px;
+            border:2px solid var(--border); font-size:0.95rem; background:#fff; font-family:inherit;
+        }
+        .search-input-wrap .search-icon {
+            position:absolute; left:14px; top:50%; transform:translateY(-50%);
+            font-size:1.1rem; color:#999; pointer-events:none;
+        }
+        .filter-select {
+            padding:12px 32px 12px 14px; border-radius:25px;
+            border:2px solid var(--border); font-size:0.9rem; background:#fff;
+            cursor:pointer; font-family:inherit; min-width:130px;
+            appearance:none; -webkit-appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 12px center;
+        }
+        .stats-bar {
+            display:flex; align-items:center; justify-content:space-between;
+            flex-wrap:wrap; gap:10px; margin-bottom:18px; font-size:0.85rem; color:var(--text-light);
+        }
+        .cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:18px; }
+        .teacher-card {
+            background:var(--card-bg); border-radius:var(--radius); padding:22px;
+            box-shadow:var(--shadow); border:1px solid #eef1f5; cursor:pointer;
+            position:relative; display:flex; flex-direction:column; gap:12px;
+        }
+        .teacher-card:hover { box-shadow:0 8px 30px rgba(0,0,0,0.1); transform:translateY(-2px); }
+        .card-top { display:flex; gap:14px; align-items:flex-start; }
+        .avatar {
+            width:52px; height:52px; border-radius:50%;
+            background:linear-gradient(135deg,#e8f0f8,#dce8f4);
+            display:flex; align-items:center; justify-content:center;
+            font-weight:700; font-size:1.3rem; color:var(--primary); flex-shrink:0;
+        }
+        .card-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+        .tag { display:inline-block; padding:3px 10px; border-radius:15px; font-size:0.73rem; font-weight:600; }
+        .tag-subject { background:var(--tag-blue); color:var(--tag-blue-text); }
+        .tag-grade { background:var(--tag-green); color:var(--tag-green-text); }
+        .tag-area { background:var(--tag-orange); color:var(--tag-orange-text); }
+        .card-desc {
+            font-size:0.85rem; color:var(--text-light);
+            display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+        }
+        .card-footer {
+            display:flex; align-items:center; justify-content:space-between;
+            flex-wrap:wrap; gap:8px; font-size:0.75rem; color:#999;
+            border-top:1px solid #f0f2f5; padding-top:10px; margin-top:auto;
+        }
+        .card-collect {
+            background:none; border:none; font-size:1.2rem; cursor:pointer; padding:4px;
+        }
+        .card-collect.collected { color:var(--accent); }
+        .empty-state { text-align:center; padding:60px 20px; grid-column:1/-1; }
+        .empty-icon { font-size:3rem; margin-bottom:12px; }
+        .modal-overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200;
+            display:flex; align-items:center; justify-content:center; padding:20px;
+        }
+        .modal {
+            background:#fff; border-radius:var(--radius); max-width:560px;
+            width:100%; max-height:85vh; overflow-y:auto;
+        }
+        .modal-header {
+            padding:18px 22px; border-bottom:1px solid #eee;
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; background:#fff; z-index:10;
+        }
+        .modal-close {
+            background:none; border:none; font-size:1.2rem; cursor:pointer; color:#999;
+        }
+        .modal-body { padding:22px; }
+        .form-panel {
+            background:#fff; border-radius:var(--radius); padding:28px;
+            box-shadow:var(--shadow); margin-bottom:28px; border:1px solid #eef1f5; display:none;
+        }
+        .form-panel.visible { display:block; }
+        .form-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+        .form-group { flex:1; min-width:180px; display:flex; flex-direction:column; gap:4px; }
+        .form-group label { font-weight:600; font-size:0.82rem; color:#555; }
+        .form-group input,.form-group select,.form-group textarea {
+            padding:10px 14px; border-radius:8px; border:1.5px solid var(--border);
+            font-size:0.9rem; background:#fafbfc; font-family:inherit;
+        }
+        .form-group textarea { min-height:80px; resize:vertical; }
+        .toast-container { position:fixed; top:20px; right:20px; z-index:999; }
+        .toast {
+            padding:12px 20px; border-radius:25px; font-size:0.85rem; font-weight:600;
+            color:#fff; margin-bottom:8px; box-shadow:0 6px 20px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast.success { background:#27ae60; }
+        .toast.error { background:#c0392b; }
+        .toast.info { background:#3498db; }
+        .btn-admin-delete {
+            background:#e74c3c; color:#fff; font-size:0.7rem; padding:4px 10px;
+            border-radius:12px; border:none; cursor:pointer; position:absolute; top:8px; right:8px;
+        }
+        .admin-indicator {
+            position:fixed; bottom:20px; left:20px; background:#8e44ad; color:#fff;
+            padding:8px 16px; border-radius:20px; font-size:0.78rem; z-index:300; cursor:pointer;
+        }
+        .footer { text-align:center; padding:24px; font-size:0.75rem; color:#bbb; }
+        .btn-danger-text {
+            background:none; border:none; color:var(--danger); cursor:pointer;
+            font-size:0.85rem; text-decoration:underline;
+        }
+        @media (max-width:768px) {
+            .cards-grid { grid-template-columns:1fr; }
+            .search-row { flex-direction:column; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <a href="#" class="logo" onclick="resetAllFilters(); return false;">
+                <span class="logo-icon">🎓</span>
+                <span>常山师生桥<span style="font-size:0.7rem;opacity:0.85;display:block;">免费补课信息交流平台</span></span>
+            </a>
+            <div class="header-actions">
+                <button class="btn btn-outline btn-sm" onclick="toggleCollectList()">
+                    ⭐ 收藏夹 <span id="collect-count-badge" style="background:rgba(255,255,255,0.3);padding:2px 8px;border-radius:12px;">0</span>
+                </button>
+                <button class="btn btn-primary" onclick="togglePublishForm()">
+                    ✏️ 发布补课信息
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="form-panel" id="publishPanel">
+            <h2>📝 发布补课信息</h2>
+            <p style="color:var(--text-light); margin-bottom:18px;">信息将<strong>实时同步到云端</strong>，所有人可见。平台不收费、不介入交易。</p>
+            <form id="publishForm" onsubmit="handlePublish(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>👤 姓名 *</label>
+                        <input type="text" id="pub_name" required placeholder="您的姓名或称呼">
+                    </div>
+                    <div class="form-group">
+                        <label>⚥ 性别</label>
+                        <select id="pub_gender">
+                            <option value="">不限</option><option value="男">男</option><option value="女">女</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>📚 科目 *（可多选）</label>
+                        <select id="pub_subjects" multiple required style="min-height:100px;">
+                            <option value="语文">语文</option><option value="数学">数学</option><option value="英语">英语</option>
+                            <option value="物理">物理</option><option value="化学">化学</option><option value="生物">生物</option>
+                            <option value="政治">政治</option><option value="历史">历史</option><option value="地理">地理</option>
+                            <option value="音乐">音乐</option><option value="美术">美术</option><option value="体育">体育</option>
+                            <option value="编程">编程/信息</option><option value="其他">其他</option>
+                        </select>
+                        <span style="font-size:0.7rem;color:#aaa;">按住Ctrl可多选</span>
+                    </div>
+                    <div class="form-group">
+                        <label>🎒 年级 *（可多选）</label>
+                        <select id="pub_grades" multiple required style="min-height:100px;">
+                            <option value="小学1-3年级">小学1-3年级</option><option value="小学4-6年级">小学4-6年级</option>
+                            <option value="初中1年级">初中1年级</option><option value="初中2年级">初中2年级</option>
+                            <option value="初中3年级">初中3年级</option>
+                            <option value="高中1年级">高中1年级</option><option value="高中2年级">高中2年级</option>
+                            <option value="高中3年级">高中3年级</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>📍 区域 *</label>
+                        <select id="pub_area" required>
+                            <option value="">请选择</option>
+                            <option value="天马街道">天马街道</option><option value="紫港街道">紫港街道</option>
+                            <option value="金川街道">金川街道</option><option value="辉埠镇">辉埠镇</option>
+                            <option value="芳村镇">芳村镇</option><option value="球川镇">球川镇</option>
+                            <option value="白石镇">白石镇</option><option value="青石镇">青石镇</option>
+                            <option value="招贤镇">招贤镇</option><option value="何家乡">何家乡</option>
+                            <option value="同弓乡">同弓乡</option>
+                            <option value="新昌乡">新昌乡</option>
+                            <option value="大桥头乡">大桥头乡</option>
+                            <option value="东案乡">东案乡</option>
+                            <option value="其他区域">其他区域</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🎓 学历/资质</label>
+                        <input type="text" id="pub_education" placeholder="如：本科、教师资格证">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>📱 电话 *</label>
+                        <input type="tel" id="pub_phone" required placeholder="手机号码">
+                    </div>
+                    <div class="form-group">
+                        <label>💬 微信</label>
+                        <input type="text" id="pub_wechat" placeholder="微信号（选填）">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label>📋 简介</label>
+                        <textarea id="pub_intro" placeholder="介绍您的教学风格、经验等..."></textarea>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>💰 参考价格</label>
+                        <input type="text" id="pub_price" placeholder="如：80-150元/小时">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>🔑 管理密码 *</label>
+                        <input type="password" id="pub_password" required placeholder="设置密码，用于删除信息" minlength="4">
+                    </div>
+                </div>
+                <div style="background:#fffdf6; padding:14px; border-radius:8px; margin-top:12px; font-size:0.8rem; color:#8a7440;">
+                    ⚠️ 发布即表示同意：信息将公开展示，请自行核实对方身份。平台仅提供信息交流，不承担任何责任。
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top:12px; padding:12px 28px;">✅ 确认发布</button>
+                <button type="button" class="btn btn-reset" style="margin-top:12px;" onclick="togglePublishForm()">取消</button>
+            </form>
+        </div>
+
+        <div class="hero-section">
+            <span class="hero-badge">🆓 完全免费 · 不当中介 · 仅信息交流</span>
+            <h1 class="hero-title">在常山，找到合适的补课老师</h1>
+            <p class="hero-subtitle">信息云端同步，所有访问者均可发布和浏览</p>
+            <div class="search-row">
+                <div class="search-input-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchKeyword" placeholder="搜索科目、老师、区域..." oninput="applyFilters()">
+                </div>
+                <select class="filter-select" id="filterSubject" onchange="applyFilters()">
+                    <option value="">全部科目</option>
+                    <option value="语文">语文</option><option value="数学">数学</option><option value="英语">英语</option>
+                    <option value="物理">物理</option><option value="化学">化学</option><option value="生物">生物</option>
+                </select>
+                <select class="filter-select" id="filterGrade" onchange="applyFilters()">
+                    <option value="">全部年级</option>
+                    <option value="小学">小学</option><option value="初中">初中</option><option value="高中">高中</option>
+                </select>
+                <button class="btn-reset" onclick="resetAllFilters()">🔄 重置</button>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <span>共找到 <strong id="resultCount">0</strong> 位老师</span>
+        </div>
+
+        <div class="cards-grid" id="cardsContainer"></div>
+    </div>
+
+    <div class="footer" id="footerTrigger">
+        <strong>常山师生桥</strong> · 云端同步版 · 不介入交易 · 不收取中介费
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div class="modal-overlay" id="detailModal" style="display:none;" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle">详情</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- 收藏弹窗 -->
+    <div class="modal-overlay" id="collectModal" style="display:none;" onclick="closeCollectModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>⭐ 我的收藏</h3>
+                <button class="modal-close" onclick="closeCollectModal()">✕</button>
+            </div>
+            <div class="modal-body" id="collectModalBody"></div>
+        </div>
+    </div>
+
+    <!-- 管理员登录弹窗 -->
+    <div class="modal-overlay" id="adminLoginModal" style="display:none;" onclick="closeAdminLoginModal(event)">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width:400px;">
+            <div class="modal-header">
+                <h3>🔐 管理员登录</h3>
+                <button class="modal-close" onclick="closeAdminLoginModal()">✕</button>
+            </div>
+            <div class="modal-body" style="text-align:center;">
+                <input type="password" id="adminPasswordInput" placeholder="请输入管理员密码" style="width:100%;padding:12px;border-radius:25px;border:2px solid #8e44ad;text-align:center;font-size:1rem;margin:16px 0;" onkeydown="if(event.key==='Enter')adminLogin()">
+                <button class="btn btn-primary" onclick="adminLogin()" style="background:#8e44ad;width:100%;">🔓 登录</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-indicator" id="adminIndicator" style="display:none;" onclick="adminLogout()">👑 管理员模式 · 点击退出</div>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ==================== Supabase 初始化 ====================
+        const SUPABASE_URL = 'https://pogfinilytxqsfczbs.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_17kF4ZpqerLWdDamKwrQJA_3nN3Pva8';
+        const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ==================== 配置 ====================
+        const ADMIN_PASSWORD = 'zcrdsg666';
+        let teachers = [];
+        let collectedIds = JSON.parse(localStorage.getItem('cs_collected_ids') || '[]');
+        let isAdmin = localStorage.getItem('cs_admin_logged_in') === 'true';
+
+        // ==================== 数据同步（Supabase 版）====================
+        async function loadTeachersFromCloud() {
+            try {
+                const { data, error } = await sbClient
+                    .from('teachers')
+                    .select('*')
+                    .order('create_time', { ascending: false });
+
+                if (error) {
+                    console.error('加载失败:', error);
+                    showToast('网络异常，数据加载失败', 'error');
+                    return;
+                }
+
+                teachers = data.map(item => ({
+                    _id: item.id,
+                    name: item.name,
+                    gender: item.gender,
+                    subjects: item.subjects || [],
+                    grades: item.grades || [],
+                    area: item.area,
+                    education: item.education,
+                    contact_phone: item.contact_phone,
+                    contact_wechat: item.contact_wechat,
+                    intro: item.intro,
+                    price_range: item.price_range,
+                    password: item.password,
+                    create_time: item.create_time
+                }));
+                renderCards();
+            } catch (e) {
+                console.error('加载失败:', e);
+                showToast('网络异常，数据加载失败', 'error');
+            }
+        }
+
+        async function addTeacherToCloud(teacher) {
+            try {
+                const { data, error } = await sbClient
+                    .from('teachers')
+                    .insert([teacher])
+                    .select();
+
+                if (error) {
+                    console.error('发布失败:', error);
+                    return null;
+                }
+                return data[0].id;
+            } catch (e) {
+                console.error('发布失败:', e);
+                return null;
+            }
+        }
+
+        async function deleteTeacherFromCloud(id) {
+            try {
+                const { error } = await sbClient
+                    .from('teachers')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    console.error('删除失败:', error);
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                console.error('删除失败:', e);
+                return false;
+            }
+        }
+
+        // ==================== 本地渲染 ====================
+        function renderCards() {
+            const container = document.getElementById('cardsContainer');
+            const filtered = getFilteredTeachers();
+            document.getElementById('resultCount').textContent = filtered.length;
+            document.getElementById('collect-count-badge').textContent = collectedIds.length;
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><h3>暂无老师信息</h3><p>点击上方按钮发布第一条信息吧！</p></div>';
+                return;
+            }
+            container.innerHTML = filtered.map(t => {
+                const isCollected = collectedIds.includes(t._id);
+                const adminBtn = isAdmin ? `<button class="btn-admin-delete" onclick="event.stopPropagation();adminDelete('${t._id}')">🗑</button>` : '';
+                return `
+                <div class="teacher-card" onclick="openDetail('${t._id}')">
+                    ${adminBtn}
+                    <div class="card-top">
+                        <div class="avatar">${t.name.charAt(0)}</div>
+                        <div class="card-info">
+                            <div class="card-name">${escapeHtml(t.name)} ${t.gender||''}</div>
+                            <div class="card-tags">
+                                ${t.subjects.map(s=>`<span class="tag tag-subject">${s}</span>`).join('')}
+                                ${t.grades.slice(0,3).map(g=>`<span class="tag tag-grade">${g}</span>`).join('')}
+                                <span class="tag tag-area">📍${t.area}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-desc">${escapeHtml(t.intro||'暂无简介')}</div>
+                    <div class="card-footer">
+                        <span style="color:var(--accent);font-weight:600;">${t.price_range||'面议'}</span>
+                        <span>${getTimeAgo(t.create_time)}</span>
+                        <button class="card-collect ${isCollected?'collected':''}" onclick="event.stopPropagation();toggleCollect('${t._id}')">${isCollected?'⭐':'☆'}</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function getFilteredTeachers() {
+            const keyword = (document.getElementById('searchKeyword')?.value || '').toLowerCase();
+            const filterSubject = document.getElementById('filterSubject')?.value;
+            const filterGrade = document.getElementById('filterGrade')?.value;
+            let filtered = teachers;
+            if (keyword) filtered = filtered.filter(t => t.name.toLowerCase().includes(keyword) || t.subjects.some(s=>s.toLowerCase().includes(keyword)) || t.area.includes(keyword));
+            if (filterSubject) filtered = filtered.filter(t => t.subjects.includes(filterSubject));
+            if (filterGrade) filtered = filtered.filter(t => t.grades.some(g => g.includes(filterGrade)));
+            return filtered;
+        }
+
+        function openDetail(id) {
+            const t = teachers.find(t => t._id === id);
+            if (!t) return;
+            document.getElementById('modalTitle').textContent = t.name;
+            document.getElementById('modalBody').innerHTML = `
+                <p><strong>科目：</strong>${t.subjects.join('、')}</p>
+                <p><strong>年级：</strong>${t.grades.join('、')}</p>
+                <p><strong>区域：</strong>${t.area}</p>
+                <p><strong>简介：</strong>${t.intro||'无'}</p>
+                <p><strong>价格：</strong>${t.price_range||'面议'}</p>
+                <div style="background:#f9fafb;padding:12px;border-radius:8px;margin-top:12px;">
+                    <p>📱 电话：<strong>${t.contact_phone}</strong></p>
+                    ${t.contact_wechat?`<p>💬 微信：${t.contact_wechat}</p>`:''}
+                </div>
+                <div style="margin-top:16px;">
+                    <button class="btn btn-primary btn-sm" onclick="window.open('tel:${t.contact_phone}')">📞 拨打电话</button>
+                    <button class="btn btn-outline btn-sm" style="color:#333;border-color:#ccc;" onclick="toggleCollect('${t._id}');closeModal();">⭐ 收藏</button>
+                    <button class="btn-danger-text" onclick="deleteWithPassword('${t._id}')">🗑 删除（需密码）</button>
+                    ${isAdmin?`<button style="background:#e74c3c;color:#fff;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;" onclick="adminDelete('${t._id}');closeModal();">👑 管理员删除</button>`:''}
+                </div>
+            `;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function closeModal(e) {
+            if (e && e.target !== document.getElementById('detailModal')) return;
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        // ==================== 发布与删除 ====================
+        async function handlePublish(e) {
+            e.preventDefault();
+            const teacher = {
+                name: document.getElementById('pub_name').value.trim(),
+                gender: document.getElementById('pub_gender').value,
+                subjects: Array.from(document.getElementById('pub_subjects').selectedOptions).map(o=>o.value),
+                grades: Array.from(document.getElementById('pub_grades').selectedOptions).map(o=>o.value),
+                area: document.getElementById('pub_area').value,
+                education: document.getElementById('pub_education').value.trim(),
+                contact_phone: document.getElementById('pub_phone').value.trim(),
+                contact_wechat: document.getElementById('pub_wechat').value.trim(),
+                intro: document.getElementById('pub_intro').value.trim(),
+                price_range: document.getElementById('pub_price').value.trim(),
+                password: document.getElementById('pub_password').value,
+                create_time: Date.now()
+            };
+            if (!teacher.name || !teacher.subjects.length || !teacher.grades.length || !teacher.area || !teacher.contact_phone || !teacher.password) {
+                return showToast('请填写所有必填项', 'error');
+            }
+            const id = await addTeacherToCloud(teacher);
+            if (id) {
+                document.getElementById('publishForm').reset();
+                document.getElementById('publishPanel').classList.remove('visible');
+                await loadTeachersFromCloud();
+                showToast('✅ 发布成功！已同步到云端', 'success');
+            } else {
+                showToast('❌ 发布失败，请检查网络', 'error');
+            }
+        }
+
+        async function deleteWithPassword(id) {
+            const t = teachers.find(t => t._id === id);
+            if (!t) return;
+            const pwd = prompt('请输入管理密码：');
+            if (pwd === t.password || (isAdmin && pwd === ADMIN_PASSWORD)) {
+                if (confirm('确定删除？')) {
+                    const ok = await deleteTeacherFromCloud(id);
+                    if (ok) {
+                        collectedIds = collectedIds.filter(cid => cid !== id);
+                        localStorage.setItem('cs_collected_ids', JSON.stringify(collectedIds));
+                        await loadTeachersFromCloud();
+                        showToast('已删除', 'success');
+                    }
+                }
+            } else if (pwd) {
+                showToast('密码错误', 'error');
+            }
+        }
+
+        async function adminDelete(id) {
+            if (!isAdmin) return;
+            if (confirm('管理员确认删除？')) {
+                const ok = await deleteTeacherFromCloud(id);
+                if (ok) {
+                    collectedIds = collectedIds.filter(cid => cid !== id);
+                    localStorage.setItem('cs_collected_ids', JSON.stringify(collectedIds));
+                    await loadTeachersFromCloud();
+                    showToast('管理员已删除', 'success');
+                }
+            }
+        }
+
+        // ==================== 管理员 ====================
+        function adminLogin() {
+            if (document.getElementById('adminPasswordInput').value === ADMIN_PASSWORD) {
+                isAdmin = true;
+                localStorage.setItem('cs_admin_logged_in', 'true');
+                document.getElementById('adminLoginModal').style.display = 'none';
+                document.getElementById('adminIndicator').style.display = 'block';
+                showToast('👑 管理员登录成功', 'success');
+                renderCards();
+            } else {
+                showToast('密码错误', 'error');
+            }
+        }
+        function adminLogout() {
+            isAdmin = false;
+            localStorage.removeItem('cs_admin_logged_in');
+            document.getElementById('adminIndicator').style.display = 'none';
+            showToast('已退出管理员模式', 'info');
+            renderCards();
+        }
+
+        // 隐藏入口：点击底部5次
+        let footerClicks = 0;
+        document.getElementById('footerTrigger').addEventListener('click', () => {
+            footerClicks++;
+            if (footerClicks >= 5) { footerClicks=0; if (!isAdmin) document.getElementById('adminLoginModal').style.display='flex'; }
+            setTimeout(()=>{footerClicks=0;}, 1500);
+        });
+
+        // ==================== 收藏（本地存储） ====================
+        function toggleCollect(id) {
+            const idx = collectedIds.indexOf(id);
+            if (idx >= 0) collectedIds.splice(idx,1);
+            else collectedIds.push(id);
+            localStorage.setItem('cs_collected_ids', JSON.stringify(collectedIds));
+            renderCards();
+        }
+        function toggleCollectList() {
+            const body = document.getElementById('collectModalBody');
+            const collected = teachers.filter(t=>collectedIds.includes(t._id));
+            body.innerHTML = collected.length === 0 ? '<p style="text-align:center;color:#999;">暂无收藏</p>' : collected.map(t=>`<p>⭐ ${t.name} - ${t.subjects[0]} <button onclick="toggleCollect('${t._id}');toggleCollectList();">取消</button></p>`).join('');
+            document.getElementById('collectModal').style.display='flex';
+        }
+        function closeCollectModal(e) {
+            if (e && e.target !== document.getElementById('collectModal')) return;
+            document.getElementById('collectModal').style.display='none';
+        }
+
+        function togglePublishForm() {
+            document.getElementById('publishPanel').classList.toggle('visible');
+        }
+        function resetAllFilters() {
+            document.getElementById('searchKeyword').value = '';
+            document.getElementById('filterSubject').value = '';
+            document.getElementById('filterGrade').value = '';
+            renderCards();
+        }
+        function applyFilters() { renderCards(); }
+
+        // ==================== 工具 ====================
+        function showToast(msg, type) {
+            const t = document.createElement('div');
+            t.className = 'toast ' + (type||'info');
+            t.textContent = msg;
+            document.getElementById('toastContainer').appendChild(t);
+            setTimeout(()=>t.remove(), 3000);
+        }
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s||'';
+            return d.innerHTML;
+        }
+        function getTimeAgo(ts) {
+            const diff = Date.now() - ts;
+            const min = Math.floor(diff/60000);
+            if (min<1) return '刚刚';
+            if (min<60) return min+'分钟前';
+            const h = Math.floor(diff/3600000);
+            if (h<24) return h+'小时前';
+            return Math.floor(diff/86400000)+'天前';
+        }
+
+        // ==================== 启动 ====================
+        loadTeachersFromCloud();
+        if (isAdmin) document.getElementById('adminIndicator').style.display = 'block';
+    </script>
+</body>
+</html>
