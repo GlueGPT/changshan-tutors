@@ -6,7 +6,25 @@
     <title>常山师生桥 - 免费补课信息交流平台</title>
 
     <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js" 
+        defer 
+        onerror="handleSdkLoadError()"></script>
+    <!-- 备用CDN，主CDN失败时由JS自动切换 -->
+    <script>
+        window.sdkLoadFailed = false;
+        function handleSdkLoadError() {
+            window.sdkLoadFailed = true;
+            // 尝试从备用CDN加载
+            var s = document.createElement('script');
+            s.src = 'https://unpkg.com/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js';
+            s.defer = true;
+            s.onerror = function() {
+                document.querySelector('.loading-text').textContent = '❌ 核心组件加载失败';
+                document.getElementById('loadingSub').innerHTML = 'CDN连接失败，请检查网络后刷新页面<br><button class="retry-btn" onclick="location.reload()">🔄 刷新重试</button>';
+            };
+            document.head.appendChild(s);
+        }
+    </script>
 
     <style>
         :root {
@@ -429,7 +447,7 @@
 
         // 检查 Supabase SDK 是否加载成功
         if (typeof supabase === 'undefined') {
-            document.getElementById('loadingText').textContent = '❌ 核心组件加载失败';
+            document.querySelector('.loading-text').textContent = '❌ 核心组件加载失败';
             document.getElementById('loadingSub').textContent = '请检查网络连接后刷新页面';
             document.getElementById('loadingSub').innerHTML += '<br><button class="retry-btn" onclick="location.reload()">🔄 刷新重试</button>';
         } else {
@@ -477,14 +495,22 @@
 
             if (!sbClient) {
                 showLoadingError('数据库客户端未初始化');
+                hideLoading();
                 return;
             }
+
+            // 8秒超时控制
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
 
             try {
                 const { data, error } = await sbClient
                     .from('teachers')
                     .select('*')
-                    .order('create_time', { ascending: false });
+                    .order('create_time', { ascending: false })
+                    .abortSignal(controller.signal);
+
+                clearTimeout(timeoutId);
 
                 if (error) {
                     console.error('加载失败:', error);
@@ -516,7 +542,11 @@
                 hideLoading();
 
             } catch (e) {
+                clearTimeout(timeoutId);
                 console.error('加载失败:', e);
+                if (e.name === 'AbortError') {
+                    showToast('⏱ 连接超时，显示缓存数据', 'warning');
+                }
                 handleLoadError(e);
             }
         }
@@ -529,11 +559,12 @@
                 renderCards();
                 isOnline = false;
                 updateConnectionStatus();
-                hideLoading();
                 showToast('⚠️ 当前处于离线模式，显示的是缓存数据', 'warning');
             } else {
                 showLoadingError('无法连接到云端数据库');
             }
+            // 无论是否有缓存，都确保加载层隐藏
+            hideLoading();
         }
 
         function showLoadingError(msg) {
@@ -834,6 +865,27 @@
         }
 
         // ==================== 启动 ====================
+        // 10秒兜底超时：无论发生什么，加载层必须消失
+        setTimeout(() => {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay && overlay.style.display !== 'none') {
+                console.warn('加载超时，强制隐藏加载层');
+                hideLoading();
+                // 如果还没有数据，显示空状态
+                if (teachers.length === 0) {
+                    const cached = getCachedTeachers();
+                    if (cached.length > 0) {
+                        teachers = cached;
+                        renderCards();
+                        showToast('⚠️ 加载超时，显示缓存数据', 'warning');
+                    } else {
+                        document.getElementById('cardsContainer').innerHTML = 
+                            '<div class="empty-state"><div class="empty-icon">📭</div><h3>加载超时</h3><p>请检查网络连接后刷新页面</p><button class="retry-btn" onclick="location.reload()">🔄 刷新重试</button></div>';
+                    }
+                }
+            }
+        }, 10000);
+
         loadTeachersFromCloud();
         if (isAdmin) document.getElementById('adminIndicator').style.display = 'block';
     </script>
