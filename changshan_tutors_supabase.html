@@ -5,38 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>常山师生桥 - 免费补课信息交流平台</title>
 
-    <!-- DNS预解析 -->
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link rel="dns-prefetch" href="https://unpkg.com">
-    <link rel="dns-prefetch" href="https://pogfiinilytxqsfbczbs.supabase.co">
-
-    <!-- 预连接 -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="preconnect" href="https://unpkg.com" crossorigin>
-    <link rel="preconnect" href="https://pogfiinilytxqsfbczbs.supabase.co" crossorigin>
-
-    <!-- 预加载SDK -->
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js" as="script">
-
     <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js" 
-        defer 
-        onerror="handleSdkLoadError()"></script>
-    <!-- 备用CDN，主CDN失败时由JS自动切换 -->
-    <script>
-        window.sdkLoadFailed = false;
-        function handleSdkLoadError() {
-            window.sdkLoadFailed = true;
-            var s = document.createElement('script');
-            s.src = 'https://unpkg.com/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js';
-            s.defer = true;
-            s.onerror = function() {
-                document.querySelector('.loading-text').textContent = '❌ 核心组件加载失败';
-                document.getElementById('loadingSub').innerHTML = 'CDN连接失败，请检查网络后刷新页面<br><button class="retry-btn" onclick="location.reload()">🔄 刷新重试</button>';
-            };
-            document.head.appendChild(s);
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
 
     <style>
         :root {
@@ -214,7 +184,6 @@
         .toast.success { background:#27ae60; }
         .toast.error { background:#c0392b; }
         .toast.info { background:#3498db; }
-        .toast.warning { background:#f39c12; }
         .btn-admin-delete {
             background:#e74c3c; color:#fff; font-size:0.7rem; padding:4px 10px;
             border-radius:12px; border:none; cursor:pointer; position:absolute; top:8px; right:8px;
@@ -228,31 +197,6 @@
             background:none; border:none; color:var(--danger); cursor:pointer;
             font-size:0.85rem; text-decoration:underline;
         }
-        /* 加载状态 */
-        .loading-overlay {
-            position:fixed; inset:0; background:rgba(255,255,255,0.9); z-index:500;
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-        }
-        .loading-spinner {
-            width:40px; height:40px; border:3px solid #e0e4e8;
-            border-top-color:var(--primary); border-radius:50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-        .loading-text { margin-top:16px; color:var(--text-light); font-size:0.9rem; }
-        .loading-sub { margin-top:8px; color:#aaa; font-size:0.75rem; }
-        .retry-btn {
-            margin-top:16px; padding:8px 20px; border-radius:20px;
-            background:var(--primary); color:#fff; border:none; cursor:pointer;
-        }
-        .offline-badge {
-            display:inline-block; background:#fff3cd; color:#856404;
-            font-size:0.7rem; padding:2px 8px; border-radius:10px; margin-left:8px;
-        }
         @media (max-width:768px) {
             .cards-grid { grid-template-columns:1fr; }
             .search-row { flex-direction:column; }
@@ -260,43 +204,6 @@
     </style>
 </head>
 <body>
-    <!-- 加载状态层 -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">正在连接云端数据库...</div>
-        <div class="loading-sub" id="loadingSub">首次加载可能需要几秒钟</div>
-        <!-- 骨架屏：数据回来前显示占位卡片 -->
-        <div class="skeleton-container" id="skeletonContainer" style="display:none;margin-top:20px;width:90%;max-width:600px;">
-            <div class="skeleton-card" style="background:#fff;border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-                <div style="display:flex;gap:14px;align-items:flex-start;">
-                    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(90deg,#e8f0f8 25%,#dce8f4 50%,#e8f0f8 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>
-                    <div style="flex:1;">
-                        <div style="height:18px;width:120px;background:linear-gradient(90deg,#e8f0f8 25%,#dce8f4 50%,#e8f0f8 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;margin-bottom:8px;"></div>
-                        <div style="height:14px;width:200px;background:linear-gradient(90deg,#e8f0f8 25%,#dce8f4 50%,#e8f0f8 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="skeleton-card" style="background:#fff;border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-                <div style="display:flex;gap:14px;align-items:flex-start;">
-                    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(90deg,#e8f0f8 25%,#dce8f4 50%,#e8f0f8 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>
-                    <div style="flex:1;">
-                        <div style="height:18px;width:100px;background:linear-gradient(90deg,#e8f0f8 25%,#dce8f4 50%,#e8f0f8 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;margin-bottom:8px;"></div>
-                        <div style="height:14px;width:180px;background:linear-gradient(90deg,#e8f0f8 25%,#dce8f4 50%,#e8f0f8 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="skeleton-card" style="background:#fff;border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-                <div style="display:flex;gap:14px;align-items:flex-start;">
-                    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(90deg,#e8f0f8 25%,#dce8f4 50%,#e8f0f8 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>
-                    <div style="flex:1;">
-                        <div style="height:18px;width:140px;background:linear-gradient(90deg,#e8f0f8 25%,#dce8f4 50%,#e8f0f8 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;margin-bottom:8px;"></div>
-                        <div style="height:14px;width:220px;background:linear-gradient(90deg,#e8f0f8 25%,#dce8f4 50%,#e8f0f8 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <header class="header">
         <div class="header-inner">
             <a href="#" class="logo" onclick="resetAllFilters(); return false;">
@@ -434,7 +341,6 @@
 
         <div class="stats-bar">
             <span>共找到 <strong id="resultCount">0</strong> 位老师</span>
-            <span id="connectionStatus"></span>
         </div>
 
         <div class="cards-grid" id="cardsContainer"></div>
@@ -487,23 +393,7 @@
         // ==================== Supabase 初始化 ====================
         const SUPABASE_URL = 'https://pogfiinilytxqsfbczbs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_17kF4ZpqerLWdDamKwrQJA_3nN3Pva8';
-
-        let sbClient = null;
-        let isOnline = false;
-
-        // 检查 Supabase SDK 是否加载成功
-        if (typeof supabase === 'undefined') {
-            document.querySelector('.loading-text').textContent = '❌ 核心组件加载失败';
-            document.getElementById('loadingSub').textContent = '请检查网络连接后刷新页面';
-            document.getElementById('loadingSub').innerHTML += '<br><button class="retry-btn" onclick="location.reload()">🔄 刷新重试</button>';
-        } else {
-            try {
-                sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            } catch (e) {
-                console.error('Supabase 初始化失败:', e);
-                showLoadingError('数据库连接初始化失败');
-            }
-        }
+        const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // ==================== 配置 ====================
         const ADMIN_PASSWORD = 'zcrdsg666';
@@ -511,59 +401,17 @@
         let collectedIds = JSON.parse(localStorage.getItem('cs_collected_ids') || '[]');
         let isAdmin = localStorage.getItem('cs_admin_logged_in') === 'true';
 
-        // ==================== 本地缓存 ====================
-        function getCachedTeachers() {
-            try {
-                const cached = localStorage.getItem('cs_teachers_cache');
-                if (cached) {
-                    return JSON.parse(cached);
-                }
-            } catch (e) {}
-            return [];
-        }
-
-        function setCachedTeachers(data) {
-            try {
-                localStorage.setItem('cs_teachers_cache', JSON.stringify(data));
-                localStorage.setItem('cs_teachers_cache_time', Date.now().toString());
-            } catch (e) {}
-        }
-
         // ==================== 数据同步（Supabase 版）====================
         async function loadTeachersFromCloud() {
-            // 立即显示骨架屏，提升感知速度
-            document.getElementById('skeletonContainer').style.display = 'block';
-
-            // 先显示缓存数据（如果有）
-            const cached = getCachedTeachers();
-            if (cached.length > 0) {
-                teachers = cached;
-                renderCards();
-                document.getElementById('loadingSub').textContent = '已显示缓存数据，正在同步云端...';
-            }
-
-            if (!sbClient) {
-                showLoadingError('数据库客户端未初始化');
-                hideLoading();
-                return;
-            }
-
-            // 8秒超时控制
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000);
-
             try {
                 const { data, error } = await sbClient
                     .from('teachers')
-                    .select('id,name,gender,subjects,grades,area,education,contact_phone,contact_wechat,intro,price_range,create_time')
-                    .order('create_time', { ascending: false })
-                    .abortSignal(controller.signal);
-
-                clearTimeout(timeoutId);
+                    .select('*')
+                    .order('create_time', { ascending: false });
 
                 if (error) {
                     console.error('加载失败:', error);
-                    handleLoadError(error);
+                    showToast('网络异常，数据加载失败', 'error');
                     return;
                 }
 
@@ -582,69 +430,14 @@
                     password: item.password,
                     create_time: item.create_time
                 }));
-
-                // 缓存到本地
-                setCachedTeachers(teachers);
-                isOnline = true;
-                updateConnectionStatus();
                 renderCards();
-                hideLoading();
-
             } catch (e) {
-                clearTimeout(timeoutId);
                 console.error('加载失败:', e);
-                if (e.name === 'AbortError') {
-                    showToast('⏱ 连接超时，显示缓存数据', 'warning');
-                }
-                handleLoadError(e);
-            }
-        }
-
-        function handleLoadError(error) {
-            // 如果有缓存，显示缓存并提示离线
-            const cached = getCachedTeachers();
-            if (cached.length > 0) {
-                teachers = cached;
-                renderCards();
-                isOnline = false;
-                updateConnectionStatus();
-                showToast('⚠️ 当前处于离线模式，显示的是缓存数据', 'warning');
-            } else {
-                showLoadingError('无法连接到云端数据库');
-            }
-            // 无论是否有缓存，都确保加载层隐藏
-            hideLoading();
-        }
-
-        function showLoadingError(msg) {
-            document.querySelector('.loading-text').textContent = '❌ ' + msg;
-            document.getElementById('loadingSub').innerHTML = '请检查网络连接，或稍后再试<br><button class="retry-btn" onclick="location.reload()">🔄 刷新重试</button>';
-        }
-
-        function hideLoading() {
-            const overlay = document.getElementById('loadingOverlay');
-            const skeleton = document.getElementById('skeletonContainer');
-            if (skeleton) skeleton.style.display = 'none';
-            if (overlay) {
-                overlay.style.opacity = '0';
-                setTimeout(() => overlay.style.display = 'none', 300);
-            }
-        }
-
-        function updateConnectionStatus() {
-            const statusEl = document.getElementById('connectionStatus');
-            if (isOnline) {
-                statusEl.innerHTML = '';
-            } else {
-                statusEl.innerHTML = '<span class="offline-badge">📴 离线模式</span>';
+                showToast('网络异常，数据加载失败', 'error');
             }
         }
 
         async function addTeacherToCloud(teacher) {
-            if (!sbClient) {
-                showToast('❌ 数据库未连接，请检查网络', 'error');
-                return null;
-            }
             try {
                 const { data, error } = await sbClient
                     .from('teachers')
@@ -653,21 +446,16 @@
 
                 if (error) {
                     console.error('发布失败:', error);
-                    showToast('❌ 发布失败: ' + error.message, 'error');
                     return null;
                 }
-                isOnline = true;
-                updateConnectionStatus();
                 return data[0].id;
             } catch (e) {
                 console.error('发布失败:', e);
-                showToast('❌ 网络异常，发布失败', 'error');
                 return null;
             }
         }
 
         async function deleteTeacherFromCloud(id) {
-            if (!sbClient) return false;
             try {
                 const { error } = await sbClient
                     .from('teachers')
@@ -783,13 +571,6 @@
             if (!teacher.name || !teacher.subjects.length || !teacher.grades.length || !teacher.area || !teacher.contact_phone || !teacher.password) {
                 return showToast('请填写所有必填项', 'error');
             }
-
-            // 如果离线，提示用户
-            if (!isOnline && !sbClient) {
-                showToast('⚠️ 当前离线，无法发布到云端。请检查网络后重试。', 'warning');
-                return;
-            }
-
             const id = await addTeacherToCloud(teacher);
             if (id) {
                 document.getElementById('publishForm').reset();
@@ -916,26 +697,6 @@
         }
 
         // ==================== 启动 ====================
-        // 10秒兜底超时：无论发生什么，加载层必须消失
-        setTimeout(() => {
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay && overlay.style.display !== 'none') {
-                console.warn('加载超时，强制隐藏加载层');
-                hideLoading();
-                if (teachers.length === 0) {
-                    const cached = getCachedTeachers();
-                    if (cached.length > 0) {
-                        teachers = cached;
-                        renderCards();
-                        showToast('⚠️ 加载超时，显示缓存数据', 'warning');
-                    } else {
-                        document.getElementById('cardsContainer').innerHTML = 
-                            '<div class="empty-state"><div class="empty-icon">📭</div><h3>加载超时</h3><p>请检查网络连接后刷新页面</p><button class="retry-btn" onclick="location.reload()">🔄 刷新重试</button></div>';
-                    }
-                }
-            }
-        }, 10000);
-
         loadTeachersFromCloud();
         if (isAdmin) document.getElementById('adminIndicator').style.display = 'block';
     </script>
