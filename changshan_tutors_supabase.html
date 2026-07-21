@@ -14,7 +14,6 @@
         window.sdkLoadFailed = false;
         function handleSdkLoadError() {
             window.sdkLoadFailed = true;
-            // 尝试从备用CDN加载
             var s = document.createElement('script');
             s.src = 'https://unpkg.com/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js';
             s.defer = true;
@@ -871,7 +870,6 @@
             if (overlay && overlay.style.display !== 'none') {
                 console.warn('加载超时，强制隐藏加载层');
                 hideLoading();
-                // 如果还没有数据，显示空状态
                 if (teachers.length === 0) {
                     const cached = getCachedTeachers();
                     if (cached.length > 0) {
